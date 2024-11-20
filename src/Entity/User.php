@@ -14,6 +14,7 @@ use App\Api\Processor\CreateUserProcessor;
 use App\Api\Resource\CreateUser;
 use App\Traits\CreatedAtTraits;
 use App\Traits\IdTrait;
+use App\Validator\UnregistredEmail;
 use Symfony\Component\Validator\Constraints as Assert;
 
 
@@ -41,7 +42,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     use IdTrait;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Assert\Email]
+    #[Assert\NotBlank(message: "L'email ne peut pas être vide.")]
+    #[Assert\Email(message: "Veuillez saisir un email valide.")]
+    #[UnregistredEmail(message: "L'email {{ string }} est déjà utilisé.")]
     private ?string $email = null;
 
     #[ORM\Column(length: 100, nullable: true)]

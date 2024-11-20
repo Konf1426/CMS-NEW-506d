@@ -31,25 +31,34 @@ final class ContentProcessor implements ProcessorInterface
         array $uriVariables = [],
         array $context = []
     ): mixed {
-        // Vérifie si l'objet est bien une instance de Content
+        // Vérifie que l'objet est une instance de Content
         if (!$data instanceof Content) {
             return $data;
         }
 
-        // Associer l'utilisateur connecté comme auteur
+        // Récupérer l'utilisateur connecté
         $user = $this->security->getUser();
+
+        // Vérifie que l'utilisateur est connecté
         if (!$user) {
-            throw new \RuntimeException('L’utilisateur doit être authentifié pour créer un contenu.');
+            throw new \RuntimeException('Vous devez être authentifié pour créer du contenu.');
         }
+
+        // Vérifie que l'utilisateur a le rôle ROLE_ADMIN
+        if (!in_array('ROLE_ADMIN', $user->getRoles())) {
+            throw new \RuntimeException('Seuls les administrateurs peuvent créer du contenu.');
+        }
+
+        // Associe l'utilisateur comme auteur du contenu
         $data->setAuthor($user);
 
-        // Générer le slug si non défini
+        // Génère un slug si aucun n'est défini
         if (empty($data->getSlug())) {
             $slugify = new Slugify();
             $baseSlug = $slugify->slugify($data->getTitle());
             $slug = $baseSlug;
 
-            // Vérifier l'unicité du slug
+            // Vérifie l'unicité du slug
             $i = 1;
             while ($this->entityManager->getRepository(Content::class)->findOneBy(['slug' => $slug])) {
                 $slug = $baseSlug . '-' . $i;
@@ -59,7 +68,7 @@ final class ContentProcessor implements ProcessorInterface
             $data->setSlug($slug);
         }
 
-        // Persister les données en appelant le processeur existant
+        // Persiste le contenu en appelant le processeur existant
         return $this->persistProcessor->process($data, $operation, $uriVariables, $context);
     }
 }
