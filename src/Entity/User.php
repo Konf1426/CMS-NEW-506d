@@ -10,6 +10,9 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use App\Api\Processor\CreateUserProcessor;
 use App\Api\Resource\CreateUser;
 use App\Traits\CreatedAtTraits;
@@ -36,6 +39,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         )
     ]
 )]
+#[ApiFilter(SearchFilter::class, properties: ['email' => 'partial'])]
+#[ApiFilter(DateFilter::class, properties: ['createdAt'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     use CreatedAtTraits;

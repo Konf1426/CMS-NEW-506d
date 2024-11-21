@@ -55,7 +55,7 @@ security:
     access_control:
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/users, methods: [POST], roles: ROLE_ADMIN } # Admins peuvent créer des utilisateurs
-        - { path: ^/api/users, roles: IS_AUTHENTICATED_FULLY } # Abonnés peuvent accéder à leur propre compte
+        - { path: ^/api/users, methods: [POST], roles: ROLE_ADMIN } # Admins peuvent créer des utilisateurs# Abonnés peuvent accéder à leur propre compte
+        - { path: ^/api/contents, roles: PUBLIC_ACCESS }
+
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/api/contents, roles: ROLE_USER }
