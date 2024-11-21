@@ -32,9 +32,21 @@ class Upload
     #[Groups(['upload:read', 'upload:write', 'content:read', 'content:write'])]
     private ?string $path = null;
 
+    #[ORM\Column(type: 'string', nullable: true)]
+    #[Groups(['upload:read', 'upload:write', 'content:read', 'content:write'])]
+    private ?string $originalName = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    #[Groups(['upload:read', 'upload:write', 'content:read', 'content:write'])]
+    private ?string $mimeType = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['upload:read', 'content:read'])]
     private \DateTimeImmutable $createdAt;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(['upload:read'])]
+    private ?int $size = null;
 
     public function __construct()
     {
@@ -57,8 +69,41 @@ class Upload
         return $this;
     }
 
+    public function getOriginalName(): ?string
+    {
+        return $this->originalName;
+    }
+
+    public function setOriginalName(?string $originalName): self
+    {
+        $this->originalName = $originalName;
+        return $this;
+    }
+
+    public function getMimeType(): ?string
+    {
+        return $this->mimeType;
+    }
+
+    public function setMimeType(?string $mimeType): self
+    {
+        $this->mimeType = $mimeType;
+        return $this;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function getSize(): ?int
+    {
+        return $this->size;
+    }
+
+    public function setSize(?int $size): self
+    {
+        $this->size = $size;
+        return $this;
     }
 }

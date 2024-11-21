@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\ApiFilter;
 use App\Api\Processor\ContentProcessor;
 use App\Traits\IdTrait;
 use App\Traits\CreatedAtTraits;
+use App\Api\Action\ImportContentAction;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ContentRepository::class)]
@@ -30,6 +31,22 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Patch(processor: ContentProcessor::class),
     ]
 )]
+#[ApiResource(
+    operations: [
+        new \ApiPlatform\Metadata\GetCollection(),
+        new \ApiPlatform\Metadata\Get(),
+        new \ApiPlatform\Metadata\Post(),
+        new \ApiPlatform\Metadata\Post(
+            uriTemplate: '/contents/import',
+            controller: ImportContentAction::class,
+            deserialize: false,
+            name: 'import_contents'
+        )
+    ],
+    normalizationContext: ['groups' => ['content:read']],
+    denormalizationContext: ['groups' => ['content:write']]
+)]
+
 #[ApiFilter(SearchFilter::class, properties: [
     'title' => 'partial', // Recherche partielle sur le titre
     'slug' => 'exact',    // Recherche exacte sur le slug

@@ -21,6 +21,8 @@ services:
             - '../src/Kernel.php'
     
     App\Api\Processor\ContentProcessor:
+        autowire: true
+        autoconfigure: true
         arguments:
             $persistProcessor: '@api_platform.doctrine.orm.state.persist_processor'
     App\Api\Processor\CommentProcessor:
