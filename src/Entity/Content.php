@@ -16,12 +16,13 @@ use ApiPlatform\Metadata\ApiFilter;
 use App\Api\Processor\ContentProcessor;
 use App\Traits\IdTrait;
 use App\Traits\CreatedAtTraits;
-
-use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ContentRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ApiResource(
+    normalizationContext: ['groups' => ['content:read']],
+    denormalizationContext: ['groups' => ['content:write']],
     operations: [
         new \ApiPlatform\Metadata\GetCollection(),
         new \ApiPlatform\Metadata\Get(),
@@ -35,7 +36,7 @@ use Symfony\Component\Uid\Uuid;
     'tags' => 'partial',  // Recherche partielle sur les tags
 ])]
 #[ApiFilter(UuidFilter::class, properties: ['author'])] // Filtrer par UUID
-#[ApiFilter(BooleanFilter::class, properties: ['coverImage'])] // Filtrer si une image de couverture existe
+#[ApiFilter(BooleanFilter::class, properties: ['image'])] // Filtrer si une image existe
 #[ApiFilter(DateFilter::class, properties: ['createdAt'])] // Filtrer par date de création
 class Content
 {
@@ -43,29 +44,45 @@ class Content
     use IdTrait;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['content:read', 'content:write'])]
     private ?string $title = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $coverImage = null;
-
     #[ORM\Column(length: 255)]
+    #[Groups(['content:read', 'content:write'])]
     private ?string $metaTitle = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['content:read', 'content:write'])]
     private ?string $metaDescription = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['content:read', 'content:write'])]
     private ?string $content = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['content:read', 'content:write'])]
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::ARRAY, nullable: true)]
+    #[Groups(['content:read', 'content:write'])]
     private ?array $tags = null;
 
-    #[ORM\ManyToOne(inversedBy: 'contents', targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'contents')]
     #[ORM\JoinColumn(name: 'author_uuid', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[Groups(['content:read', 'content:write'])]
     private ?User $author = null;
+
+    #[ORM\ManyToOne(targetEntity: Upload::class)]
+    #[ORM\JoinColumn(name: 'image_id', referencedColumnName: 'id', onDelete: 'SET NULL')]
+    #[Groups(['content:read', 'content:write'])]
+    private ?Upload $image = null;
+
+
+    public function __construct()
+    {
+        $this->setCreatedAt();
+        $this->setId();
+    }
 
     #[ORM\PrePersist]
     public function initializeCreatedAt(): void
@@ -74,6 +91,7 @@ class Content
     }
 
     #[ORM\OneToMany(mappedBy: 'contentEntity', targetEntity: Comment::class, cascade: ['remove'])]
+    #[Groups(['content:read'])]
     private iterable $comments;
 
     public function getTitle(): ?string
@@ -84,17 +102,6 @@ class Content
     public function setTitle(string $title): self
     {
         $this->title = $title;
-        return $this;
-    }
-
-    public function getCoverImage(): ?string
-    {
-        return $this->coverImage;
-    }
-
-    public function setCoverImage(?string $coverImage): self
-    {
-        $this->coverImage = $coverImage;
         return $this;
     }
 
@@ -164,6 +171,17 @@ class Content
         return $this;
     }
 
+    public function getImage(): ?Upload
+    {
+        return $this->image;
+    }
+
+    public function setImage(?Upload $image): self
+    {
+        $this->image = $image;
+        return $this;
+    }
+
     /**
      * @return iterable<Comment>
      */
@@ -192,5 +210,5 @@ class Content
         }
 
         return $this;
-}
+    }
 }
