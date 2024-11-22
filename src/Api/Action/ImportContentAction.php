@@ -1,17 +1,21 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Api\Action;
 
+use App\Api\Processor\ContentProcessor;
 use App\Entity\Content;
 use App\Entity\Upload;
-use App\Api\Processor\ContentProcessor;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use function in_array;
+use const FILTER_VALIDATE_URL;
+use const PATHINFO_EXTENSION;
 
 #[AsController]
 class ImportContentAction
@@ -20,7 +24,7 @@ class ImportContentAction
         private EntityManagerInterface $entityManager,
         private ContentProcessor $contentProcessor,
         #[Autowire(param: 'kernel.project_dir')]
-        private string $projectDir
+        private string $projectDir,
     ) {
     }
 
@@ -29,24 +33,24 @@ class ImportContentAction
         $file = $request->files->get('file');
 
         // Vérification du fichier CSV
-        if (!$file instanceof UploadedFile || $file->getClientOriginalExtension() !== 'csv') {
+        if (!$file instanceof UploadedFile || 'csv' !== $file->getClientOriginalExtension()) {
             throw new BadRequestHttpException('Veuillez fournir un fichier CSV valide.');
         }
 
         $filePath = $file->getPathname();
         $handle = fopen($filePath, 'r');
         if (!$handle) {
-            throw new \RuntimeException('Impossible d\'ouvrir le fichier CSV.');
+            throw new RuntimeException('Impossible d\'ouvrir le fichier CSV.');
         }
 
-        $headers = fgetcsv($handle, 0, ",");
+        $headers = fgetcsv($handle, 0, ',');
         if (!$headers || !in_array('title', $headers) || !in_array('cover', $headers)) {
-            throw new \RuntimeException('Le fichier CSV ne contient pas les colonnes requises.');
+            throw new RuntimeException('Le fichier CSV ne contient pas les colonnes requises.');
         }
 
         $contents = [];
 
-        while (($data = fgetcsv($handle, 0, ",")) !== false) {
+        while (($data = fgetcsv($handle, 0, ',')) !== false) {
             $content = new Content();
 
             // Mapping des colonnes du CSV
@@ -69,7 +73,7 @@ class ImportContentAction
                     $upload->setPath($newImagePath);
                     $this->entityManager->persist($upload);
                     $content->setImage($upload);
-                } catch (\RuntimeException $e) {
+                } catch (RuntimeException $e) {
                     error_log('Erreur lors du téléchargement de l\'image : ' . $e->getMessage());
                     continue; // Ignore cette ligne et passe à la suivante
                 }
@@ -102,21 +106,18 @@ class ImportContentAction
 
     /**
      * Télécharge une image et la stocke dans le dossier public/medias.
-     *
-     * @param string $imageUrl
-     * @return string
      */
     private function storeImage(string $imageUrl): string
     {
         // Vérifie que l'URL est valide
         if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-            throw new \RuntimeException('URL invalide pour l\'image : ' . $imageUrl);
+            throw new RuntimeException('URL invalide pour l\'image : ' . $imageUrl);
         }
 
         // Récupère le contenu de l'image
         $imageContent = @file_get_contents($imageUrl);
         if (!$imageContent) {
-            throw new \RuntimeException('Impossible de télécharger l\'image : ' . $imageUrl);
+            throw new RuntimeException('Impossible de télécharger l\'image : ' . $imageUrl);
         }
 
         // Récupère ou déduit l'extension du fichier

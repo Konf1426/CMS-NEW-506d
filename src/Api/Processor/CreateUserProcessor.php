@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Api\Processor;
 
@@ -7,14 +7,14 @@ use ApiPlatform\State\ProcessorInterface;
 use App\Api\Resource\CreateUser;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class CreateUserProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private UserPasswordHasherInterface $hasher
+        private UserPasswordHasherInterface $hasher,
     ) {
     }
 
@@ -23,7 +23,7 @@ final class CreateUserProcessor implements ProcessorInterface
         mixed $data,
         Operation $operation,
         array $uriVariables = [],
-        array $context = [],
+        array $context = []
     ): User {
         // Vérifier si l'email existe déjà
         $existingUser = $this->em->getRepository(User::class)->findOneBy(['email' => $data->email]);

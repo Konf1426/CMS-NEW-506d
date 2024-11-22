@@ -1,52 +1,51 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Api\Processor;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Content;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\SecurityBundle\Security;
+use App\Entity\User;
 use Cocur\Slugify\Slugify;
+use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
+use Symfony\Bundle\SecurityBundle\Security;
 
 final class ContentProcessor implements ProcessorInterface
 {
     private EntityManagerInterface $entityManager;
     private Security $security;
+    /** @var ProcessorInterface<Content, Operation> */
     private ProcessorInterface $persistProcessor;
 
+    /**
+     * @param ProcessorInterface<Content, Operation> $persistProcessor
+     */
     public function __construct(
         EntityManagerInterface $entityManager,
         Security $security,
-        ProcessorInterface $persistProcessor
+        ProcessorInterface $persistProcessor,
     ) {
         $this->entityManager = $entityManager;
         $this->security = $security;
         $this->persistProcessor = $persistProcessor;
     }
 
+    /**
+     * @param Content $data
+     */
     public function process(
         mixed $data,
         Operation $operation,
         array $uriVariables = [],
         array $context = []
     ): mixed {
-        // Vérifie que l'objet est une instance de Content
-        if (!$data instanceof Content) {
-            return $data;
-        }
-
         // Récupérer l'utilisateur connecté
         $user = $this->security->getUser();
 
-        // Vérifie que l'utilisateur est connecté
-        if (!$user) {
-            throw new \RuntimeException('Vous devez être authentifié pour créer du contenu.');
-        }
-
-        // Vérifie que l'utilisateur a le rôle ROLE_ADMIN
-        if (!in_array('ROLE_ADMIN', $user->getRoles())) {
-            throw new \RuntimeException('Seuls les administrateurs peuvent créer du contenu.');
+        // Vérifie que l'utilisateur est connecté et est une instance de User
+        if (!$user instanceof User) {
+            throw new RuntimeException('Vous devez être authentifié pour créer du contenu.');
         }
 
         // Associe l'utilisateur comme auteur du contenu
@@ -62,7 +61,7 @@ final class ContentProcessor implements ProcessorInterface
             $i = 1;
             while ($this->entityManager->getRepository(Content::class)->findOneBy(['slug' => $slug])) {
                 $slug = $baseSlug . '-' . $i;
-                $i++;
+                ++$i;
             }
 
             $data->setSlug($slug);

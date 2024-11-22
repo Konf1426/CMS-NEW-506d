@@ -1,22 +1,23 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Repository\ContentRepository;
-use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\Mapping as ORM;
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
-use App\Api\Filter\UuidFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
-use App\Api\Processor\ContentProcessor;
-use App\Traits\IdTrait;
-use App\Traits\CreatedAtTraits;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Api\Action\ImportContentAction;
+use App\Api\Processor\ContentProcessor;
+use App\Repository\ContentRepository;
+use App\Traits\CreatedAtTraits;
+use App\Traits\IdTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ContentRepository::class)]
@@ -29,32 +30,21 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new \ApiPlatform\Metadata\Get(),
         new Post(processor: ContentProcessor::class),
         new Patch(processor: ContentProcessor::class),
-    ]
-)]
-#[ApiResource(
-    operations: [
-        new \ApiPlatform\Metadata\GetCollection(),
-        new \ApiPlatform\Metadata\Get(),
-        new \ApiPlatform\Metadata\Post(),
-        new \ApiPlatform\Metadata\Post(
+        new Post(
             uriTemplate: '/contents/import',
             controller: ImportContentAction::class,
             deserialize: false,
             name: 'import_contents'
-        )
-    ],
-    normalizationContext: ['groups' => ['content:read']],
-    denormalizationContext: ['groups' => ['content:write']]
+        ),
+    ]
 )]
-
 #[ApiFilter(SearchFilter::class, properties: [
-    'title' => 'partial', // Recherche partielle sur le titre
-    'slug' => 'exact',    // Recherche exacte sur le slug
-    'tags' => 'partial',  // Recherche partielle sur les tags
+    'title' => 'partial',
+    'slug' => 'exact',
+    'tags' => 'partial',
 ])]
-#[ApiFilter(UuidFilter::class, properties: ['author'])] // Filtrer par UUID
-#[ApiFilter(BooleanFilter::class, properties: ['image'])] // Filtrer si une image existe
-#[ApiFilter(DateFilter::class, properties: ['createdAt'])] // Filtrer par date de création
+#[ApiFilter(BooleanFilter::class, properties: ['image'])]
+#[ApiFilter(DateFilter::class, properties: ['createdAt'])]
 class Content
 {
     use CreatedAtTraits;
@@ -80,9 +70,10 @@ class Content
     #[Groups(['content:read', 'content:write'])]
     private ?string $slug = null;
 
-    #[ORM\Column(type: Types::ARRAY, nullable: true)]
+    /** @var array<string> */
+    #[ORM\Column(type: 'array', nullable: false)]
     #[Groups(['content:read', 'content:write'])]
-    private ?array $tags = null;
+    private array $tags = [];
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'contents')]
     #[ORM\JoinColumn(name: 'author_uuid', referencedColumnName: 'id', onDelete: 'CASCADE')]
@@ -94,11 +85,16 @@ class Content
     #[Groups(['content:read', 'content:write'])]
     private ?Upload $image = null;
 
+    /** @var Collection<int, Comment> */
+    #[ORM\OneToMany(mappedBy: 'contentEntity', targetEntity: Comment::class, cascade: ['remove'])]
+    #[Groups(['content:read'])]
+    private Collection $comments;
 
     public function __construct()
     {
         $this->setCreatedAt();
         $this->setId();
+        $this->comments = new ArrayCollection();
     }
 
     #[ORM\PrePersist]
@@ -106,10 +102,6 @@ class Content
     {
         $this->setCreatedAt();
     }
-
-    #[ORM\OneToMany(mappedBy: 'contentEntity', targetEntity: Comment::class, cascade: ['remove'])]
-    #[Groups(['content:read'])]
-    private iterable $comments;
 
     public function getTitle(): ?string
     {
@@ -119,6 +111,7 @@ class Content
     public function setTitle(string $title): self
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -130,6 +123,7 @@ class Content
     public function setMetaTitle(string $metaTitle): self
     {
         $this->metaTitle = $metaTitle;
+
         return $this;
     }
 
@@ -141,6 +135,7 @@ class Content
     public function setMetaDescription(string $metaDescription): self
     {
         $this->metaDescription = $metaDescription;
+
         return $this;
     }
 
@@ -152,6 +147,7 @@ class Content
     public function setContent(string $content): self
     {
         $this->content = $content;
+
         return $this;
     }
 
@@ -163,17 +159,25 @@ class Content
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
+
         return $this;
     }
 
-    public function getTags(): ?array
+    /**
+     * @return array<string>
+     */
+    public function getTags(): array
     {
-        return $this->tags;
+        return $this->tags ?? [];
     }
 
-    public function setTags(?array $tags): self
+    /**
+     * @param array<string> $tags
+     */
+    public function setTags(array $tags): self
     {
         $this->tags = $tags;
+
         return $this;
     }
 
@@ -185,6 +189,7 @@ class Content
     public function setAuthor(?User $author): self
     {
         $this->author = $author;
+
         return $this;
     }
 
@@ -196,13 +201,14 @@ class Content
     public function setImage(?Upload $image): self
     {
         $this->image = $image;
+
         return $this;
     }
 
     /**
-     * @return iterable<Comment>
+     * @return Collection<int, Comment>
      */
-    public function getComments(): iterable
+    public function getComments(): Collection
     {
         return $this->comments;
     }
@@ -210,7 +216,7 @@ class Content
     public function addComment(Comment $comment): self
     {
         if (!$this->comments->contains($comment)) {
-            $this->comments[] = $comment;
+            $this->comments->add($comment);
             $comment->setContentEntity($this);
         }
 
@@ -219,8 +225,7 @@ class Content
 
     public function removeComment(Comment $comment): self
     {
-        if ($this->comments->contains($comment)) {
-            $this->comments->removeElement($comment);
+        if ($this->comments->removeElement($comment)) {
             if ($comment->getContentEntity() === $this) {
                 $comment->setContentEntity(null);
             }

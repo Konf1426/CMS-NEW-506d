@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Api\Action;
 
@@ -16,7 +16,7 @@ class UploadAction
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        #[Autowire(param: 'kernel.project_dir')] 
+        #[Autowire(param: 'kernel.project_dir')]
         private string $projectDir,
     ) {
     }
@@ -43,7 +43,7 @@ class UploadAction
         return new JsonResponse([
             'id' => $upload->getId(),
             'path' => $upload->getPath(),
-            'createdAt' => $upload->getCreatedAt()->format('Y-m-d H:i:s')
+            'createdAt' => $upload->getCreatedAt()->format('Y-m-d H:i:s'),
         ]);
     }
 }

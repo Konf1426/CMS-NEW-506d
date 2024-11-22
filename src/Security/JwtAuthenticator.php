@@ -1,55 +1,46 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Security;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
-use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
-use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 
 class JwtAuthenticator extends AbstractAuthenticator
 {
-    private JWTEncoderInterface $jwtEncoder;
-
-    public function __construct(JWTEncoderInterface $jwtEncoder)
-    {
-        $this->jwtEncoder = $jwtEncoder;
-    }
-
     public function supports(Request $request): ?bool
     {
-        return $request->headers->has('Authorization') && str_starts_with($request->headers->get('Authorization'), 'Bearer ');
+        return $request->headers->has('Authorization');
     }
 
     public function authenticate(Request $request): Passport
     {
-        $authHeader = $request->headers->get('Authorization');
-        $jwt = substr($authHeader, 7); // Supprime "Bearer "
+        $authorizationHeader = $request->headers->get('Authorization');
 
-        try {
-            $decodedJwt = $this->jwtEncoder->decode($jwt);
-        } catch (\Exception $e) {
-            throw new AuthenticationException('Invalid JWT Token: ' . $e->getMessage());
+        if (!$authorizationHeader || !str_starts_with($authorizationHeader, 'Bearer ')) {
+            throw new AuthenticationException('Token invalide ou manquant.');
         }
 
-        if (!isset($decodedJwt['username'])) {
-            throw new AuthenticationException('JWT Token does not contain a username.');
-        }
+        $token = substr($authorizationHeader, 7);
 
-        return new SelfValidatingPassport(new UserBadge($decodedJwt['username']));
+        // Ajouter une logique pour valider ou décoder le JWT ici
+
+        return new SelfValidatingPassport(new UserBadge($token));
     }
 
-    public function onAuthenticationSuccess(Request $request, $token, string $firewallName): ?Response
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        return null; // Continue la requête normalement
+        // Logique à exécuter en cas de succès d'authentification
+        return null; // Si aucune réponse spécifique n'est nécessaire
     }
 
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
     {
-        return new Response('Authentication Failed: ' . $exception->getMessage(), Response::HTTP_UNAUTHORIZED);
+        return new Response('Échec de l\'authentification : ' . $exception->getMessage(), Response::HTTP_UNAUTHORIZED);
     }
 }

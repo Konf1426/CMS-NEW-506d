@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Entity;
 
@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use App\Api\Action\UploadAction;
 use App\Traits\IdTrait;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -19,7 +20,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
             deserialize: false,
             normalizationContext: ['groups' => ['upload:read']],
             denormalizationContext: ['groups' => ['upload:write']]
-        )
+        ),
     ],
     normalizationContext: ['groups' => ['upload:read']],
     denormalizationContext: ['groups' => ['upload:write']]
@@ -42,7 +43,7 @@ class Upload
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['upload:read', 'content:read'])]
-    private \DateTimeImmutable $createdAt;
+    private DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'integer', nullable: true)]
     #[Groups(['upload:read'])]
@@ -50,12 +51,8 @@ class Upload
 
     public function __construct()
     {
-        $this->createdAt = new \DateTimeImmutable();
-    }
-
-    public function getId(): ?string
-    {
-        return $this->id;
+        $this->createdAt = new DateTimeImmutable();
+        $this->setId();
     }
 
     public function getPath(): ?string
@@ -66,6 +63,7 @@ class Upload
     public function setPath(string $path): self
     {
         $this->path = $path;
+
         return $this;
     }
 
@@ -77,6 +75,7 @@ class Upload
     public function setOriginalName(?string $originalName): self
     {
         $this->originalName = $originalName;
+
         return $this;
     }
 
@@ -88,10 +87,11 @@ class Upload
     public function setMimeType(?string $mimeType): self
     {
         $this->mimeType = $mimeType;
+
         return $this;
     }
 
-    public function getCreatedAt(): \DateTimeImmutable
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -104,6 +104,7 @@ class Upload
     public function setSize(?int $size): self
     {
         $this->size = $size;
+
         return $this;
     }
 }

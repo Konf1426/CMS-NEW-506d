@@ -1,9 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Security\Authenticator;
 
 use App\Entity\User;
-use App\Service\Tokens; // Ensure this line is present
+use App\Service\Tokens;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,8 +25,9 @@ final class TokenAuthenticator extends AbstractAuthenticator
     ) {
     }
 
-    public function supports(Request $request): ?bool
+    public function supports(Request $request): bool
     {
+        // Retirer `?bool` du type de retour car null n'est pas nécessaire ici.
         return $request->headers->has('Authorization');
     }
 
@@ -39,15 +42,15 @@ final class TokenAuthenticator extends AbstractAuthenticator
 
             return null;
         }));
-
     }
 
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): Response
     {
-        return null;
+        // Retourne un Response vide (200 OK) pour clarifier que null n'est pas retourné.
+        return new Response();
     }
 
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
     {
         return new JsonResponse(['error' => 'Authentication failure.'], Response::HTTP_UNAUTHORIZED);
     }

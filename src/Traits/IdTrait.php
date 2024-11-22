@@ -1,10 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Traits;
 
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\Uuid;
 
 trait IdTrait
 {

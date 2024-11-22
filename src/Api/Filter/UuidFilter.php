@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Api\Filter;
 
@@ -8,10 +10,8 @@ use ApiPlatform\Metadata\Operation;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Uuid;
 use Throwable;
-use function array_map;
 use function is_array;
 use function sprintf;
-use function str_ends_with;
 use function Symfony\Component\String\u;
 
 final class UuidFilter extends AbstractFilter
@@ -60,7 +60,7 @@ final class UuidFilter extends AbstractFilter
         QueryBuilder $queryBuilder,
         QueryNameGeneratorInterface $queryNameGenerator,
         string $resourceClass,
-        Operation $operation = null,
+        ?Operation $operation = null,
         array $context = [],
     ): void {
         if (

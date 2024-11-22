@@ -1,0 +1,10 @@
+parameters:
+    level: 7 # Niveau strict
+    paths:
+        - src
+    excludePaths:
+        - %currentWorkingDirectory%/vendor
+    tmpDir: %currentWorkingDirectory%/var/cache/phpstan
+    ignoreErrors:
+        - identifier: missingType.generics
+        - '#has invalid type Illuminate#'

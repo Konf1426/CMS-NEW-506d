@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Api\Processor;
 
@@ -6,7 +6,9 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Comment;
 use App\Entity\Content;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Bundle\SecurityBundle\Security;
 
 final class CommentProcessor implements ProcessorInterface
@@ -18,7 +20,7 @@ final class CommentProcessor implements ProcessorInterface
     public function __construct(
         EntityManagerInterface $entityManager,
         Security $security,
-        ProcessorInterface $persistProcessor
+        ProcessorInterface $persistProcessor,
     ) {
         $this->entityManager = $entityManager;
         $this->security = $security;
@@ -40,8 +42,8 @@ final class CommentProcessor implements ProcessorInterface
         $user = $this->security->getUser();
 
         // Vérifie que l'utilisateur est connecté
-        if (!$user) {
-            throw new \RuntimeException('Vous devez être authentifié pour créer un commentaire.');
+        if (!$user instanceof User) {
+            throw new RuntimeException('Vous devez être authentifié pour créer un commentaire.');
         }
 
         // Associe l'utilisateur comme auteur du commentaire
@@ -50,13 +52,13 @@ final class CommentProcessor implements ProcessorInterface
         // Vérifie que le commentaire est associé à un contenu
         $content = $data->getContentEntity();
         if (!$content) {
-            throw new \RuntimeException('Le commentaire doit être associé à un contenu.');
+            throw new RuntimeException('Le commentaire doit être associé à un contenu.');
         }
 
         // Vérifie que le contenu existe dans la base
         $contentEntity = $this->entityManager->getRepository(Content::class)->find($content->getId());
         if (!$contentEntity) {
-            throw new \RuntimeException('Le contenu associé au commentaire n\'existe pas.');
+            throw new RuntimeException('Le contenu associé au commentaire n\'existe pas.');
         }
 
         // Associe le contenu valide au commentaire

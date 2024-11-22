@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Command;
 
@@ -12,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class GenerateTokenCommand extends Command
 {
-    protected static $defaultName = 'app:generate-token';
+    protected static ?string $defaultName = 'app:generate-token';
 
     private EntityManagerInterface $entityManager;
     private JWTTokenManagerInterface $jwtManager;
@@ -42,6 +42,7 @@ class GenerateTokenCommand extends Command
 
         if (!$user) {
             $output->writeln('<error>Aucun utilisateur trouvé avec cet email.</error>');
+
             return Command::FAILURE;
         }
 

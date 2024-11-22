@@ -1,25 +1,25 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Post;
+use App\Api\Processor\CreateUserProcessor;
+use App\Api\Resource\CreateUser;
 use App\Repository\UserRepository;
+use App\Traits\CreatedAtTraits;
+use App\Traits\IdTrait;
+use App\Validator\UnregistredEmail;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
-use App\Api\Processor\CreateUserProcessor;
-use App\Api\Resource\CreateUser;
-use App\Traits\CreatedAtTraits;
-use App\Traits\IdTrait;
-use App\Validator\UnregistredEmail;
 use Symfony\Component\Validator\Constraints as Assert;
-
+use function in_array;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ApiResource(
@@ -27,16 +27,13 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new \ApiPlatform\Metadata\GetCollection(),
         new \ApiPlatform\Metadata\Get(),
-        new \ApiPlatform\Metadata\Post(security: "is_granted('ROLE_ADMIN')"),
+        new Post(security: "is_granted('ROLE_ADMIN')"),
         new \ApiPlatform\Metadata\Patch(security: "is_granted('ROLE_ADMIN') or object == user"),
         new \ApiPlatform\Metadata\Delete(security: "is_granted('ROLE_ADMIN')"),
-
-        new \ApiPlatform\Metadata\Patch(security: "object == user or is_granted('ROLE_ADMIN')"),
-
         new Post(
             input: CreateUser::class,
             processor: CreateUserProcessor::class
-        )
+        ),
     ]
 )]
 #[ApiFilter(SearchFilter::class, properties: ['email' => 'partial'])]
@@ -48,7 +45,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\NotBlank(message: "L'email ne peut pas être vide.")]
-    #[Assert\Email(message: "Veuillez saisir un email valide.")]
+    #[Assert\Email(message: 'Veuillez saisir un email valide.')]
     #[UnregistredEmail(message: "L'email {{ string }} est déjà utilisé.")]
     private ?string $email = null;
 
@@ -58,7 +55,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $lastName = null;
 
-    #[ORM\Column]
+    /** @var array<string> */
+    #[ORM\Column(type: 'json')]
     private array $roles = [];
 
     #[ORM\Column]
@@ -67,15 +65,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $isActive = false;
 
-    /**
-     * @var Collection<int, Content>
-     */
+    /** @var Collection<int, Content> */
     #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'author', cascade: ['persist', 'remove'])]
     private Collection $contents;
 
-    /**
-     * @var Collection<int, Comment>
-     */
+    /** @var Collection<int, Comment> */
     #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'author', cascade: ['persist', 'remove'])]
     private Collection $comments;
 
@@ -87,22 +81,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->comments = new ArrayCollection();
     }
 
-    // Identifiant unique pour l'utilisateur
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        return (string)$this->email;
     }
 
-    // Récupérer les rôles
+    /** @return array<string> */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        $roles[] = 'ROLE_USER'; // Tous les utilisateurs ont au moins ce rôle
+        $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
     }
 
-    // Définir les rôles
+    /** @param array<string> $roles */
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
@@ -110,25 +103,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Vérifier si l'utilisateur est administrateur
     public function isAdmin(): bool
     {
         return in_array('ROLE_ADMIN', $this->roles, true);
     }
 
-    // Vérifier si l'utilisateur est abonné
     public function isSubscriber(): bool
     {
         return in_array('ROLE_SUBSCRIBER', $this->roles, true);
     }
 
-    // Vérifier si l'utilisateur est actif
     public function isActive(): bool
     {
         return $this->isActive;
     }
 
-    // Activer l'utilisateur
     public function activate(): self
     {
         $this->isActive = true;
@@ -136,7 +125,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Désactiver l'utilisateur
     public function deactivate(): self
     {
         $this->isActive = false;
@@ -144,13 +132,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Récupérer le mot de passe
     public function getPassword(): ?string
     {
         return $this->password;
     }
 
-    // Définir le mot de passe
     public function setPassword(string $password): self
     {
         $this->password = $password;
@@ -162,13 +148,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
     }
 
-    // Récupérer l'email
     public function getEmail(): ?string
     {
         return $this->email;
     }
 
-    // Définir l'email
     public function setEmail(string $email): self
     {
         $this->email = $email;
@@ -176,13 +160,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Récupérer le prénom
     public function getFirstName(): ?string
     {
         return $this->firstName;
     }
 
-    // Définir le prénom
     public function setFirstName(string $firstName): self
     {
         $this->firstName = $firstName;
@@ -190,13 +172,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Récupérer le nom de famille
     public function getLastName(): ?string
     {
         return $this->lastName;
     }
 
-    // Définir le nom de famille
     public function setLastName(string $lastName): self
     {
         $this->lastName = $lastName;
@@ -204,7 +184,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Récupérer les contenus associés
+    /** @return Collection<int, Content> */
     public function getContents(): Collection
     {
         return $this->contents;
@@ -231,7 +211,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Récupérer les commentaires associés
+    /** @return Collection<int, Comment> */
     public function getComments(): Collection
     {
         return $this->comments;

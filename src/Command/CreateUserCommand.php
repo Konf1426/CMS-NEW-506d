@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Command;
 
@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use function in_array;
 
 #[AsCommand(
     name: 'app:create-user',
@@ -48,6 +49,7 @@ class CreateUserCommand extends Command
         // Vérifie que seul un administrateur peut créer un autre administrateur
         if (in_array('ROLE_ADMIN', $roles) && !$this->isAdminAuthenticated()) {
             $output->writeln('<error>Seuls les administrateurs peuvent créer d\'autres administrateurs.</error>');
+
             return Command::FAILURE;
         }
 
@@ -65,7 +67,7 @@ class CreateUserCommand extends Command
         $output->writeln("Email : $email");
         $output->writeln("Prénom : $firstName");
         $output->writeln("Nom : $lastName");
-        $output->writeln("Rôles : " . implode(', ', $roles));
+        $output->writeln('Rôles : ' . implode(', ', $roles));
 
         return Command::SUCCESS;
     }

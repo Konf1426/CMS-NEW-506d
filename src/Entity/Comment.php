@@ -1,24 +1,22 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Repository\CommentRepository;
-use Doctrine\ORM\Mapping as ORM;
-use App\Entity\User;
-use App\Entity\Content;
-use App\Traits\IdTrait;
-use App\Traits\CreatedAtTraits;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use App\Api\Processor\CommentProcessor;
+use App\Repository\CommentRepository;
+use App\Traits\CreatedAtTraits;
+use App\Traits\IdTrait;
+use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
 #[ApiResource(
     operations: [
         new \ApiPlatform\Metadata\Post(processor: CommentProcessor::class),
         new \ApiPlatform\Metadata\GetCollection(),
-        new \ApiPlatform\Metadata\Get()
+        new \ApiPlatform\Metadata\Get(),
     ]
 )]
 #[ApiFilter(SearchFilter::class, properties: ['contentEntity.id' => 'exact'])]
