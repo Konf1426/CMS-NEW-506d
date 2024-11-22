@@ -1,51 +1,164 @@
-# Symfony Docker
 
-A [Docker](https://www.docker.com/)-based installer and runtime for the [Symfony](https://symfony.com) web framework,
-with [FrankenPHP](https://frankenphp.dev) and [Caddy](https://caddyserver.com/) inside!
+# API de Gestion de Contenus, Commentaires et Utilisateurs
 
-![CI](https://github.com/dunglas/symfony-docker/workflows/CI/badge.svg)
+Développé par **Becue Melvin (Groupe E)**
 
-## Getting Started
+---
 
-1. If not already done, [install Docker Compose](https://docs.docker.com/compose/install/) (v2.10+)
-2. Run `docker compose build --no-cache` to build fresh images
-3. Run `docker compose up --pull always -d --wait` to set up and start a fresh Symfony project
-4. Open `https://localhost` in your favorite web browser and [accept the auto-generated TLS certificate](https://stackoverflow.com/a/15076602/1352334)
-5. Run `docker compose down --remove-orphans` to stop the Docker containers.
+## **Description**
 
-## Features
+Cette API a été conçue pour gérer un système de contenus, d'utilisateurs, de commentaires, et d'uploads. Elle utilise **Symfony** et **ApiPlatform** pour fournir des fonctionnalités avancées et sécurisées, avec une authentification basée sur des tokens JWT.
 
-* Production, development and CI ready
-* Just 1 service by default
-* Blazing-fast performance thanks to [the worker mode of FrankenPHP](https://github.com/dunglas/frankenphp/blob/main/docs/worker.md) (automatically enabled in prod mode)
-* [Installation of extra Docker Compose services](docs/extra-services.md) with Symfony Flex
-* Automatic HTTPS (in dev and prod)
-* HTTP/3 and [Early Hints](https://symfony.com/blog/new-in-symfony-6-3-early-hints) support
-* Real-time messaging thanks to a built-in [Mercure hub](https://symfony.com/doc/current/mercure.html)
-* [Vulcain](https://vulcain.rocks) support
-* Native [XDebug](docs/xdebug.md) integration
-* Super-readable configuration
+---
 
-**Enjoy!**
+## **Fonctionnalités**
 
-## Docs
+### **1. Gestion des contenus (`Content`)**
+- Création, lecture, mise à jour et suppression de contenus.
+- Association d'images (upload) aux contenus.
+- Importation massive de contenus via un fichier CSV.
 
-1. [Options available](docs/options.md)
-2. [Using Symfony Docker with an existing project](docs/existing-project.md)
-3. [Support for extra services](docs/extra-services.md)
-4. [Deploying in production](docs/production.md)
-5. [Debugging with Xdebug](docs/xdebug.md)
-6. [TLS Certificates](docs/tls.md)
-7. [Using MySQL instead of PostgreSQL](docs/mysql.md)
-8. [Using Alpine Linux instead of Debian](docs/alpine.md)
-9. [Using a Makefile](docs/makefile.md)
-10. [Updating the template](docs/updating.md)
-11. [Troubleshooting](docs/troubleshooting.md)
+### **2. Gestion des commentaires (`Comment`)**
+- Les utilisateurs peuvent commenter des contenus.
+- Vérification des relations entre les utilisateurs, commentaires, et contenus.
 
-## License
+### **3. Gestion des utilisateurs (`User`)**
+- Création d'utilisateurs via l'API ou la ligne de commande.
+- Attribution de rôles (`ROLE_USER`, `ROLE_ADMIN`).
+- Authentification sécurisée via JWT.
 
-Symfony Docker is available under the MIT License.
+### **4. Upload de fichiers (`Upload`)**
+- Les fichiers peuvent être uploadés et associés à des entités (contenus, etc.).
 
-## Credits
+---
 
-Created by [Kévin Dunglas](https://dunglas.dev), co-maintained by [Maxime Helias](https://twitter.com/maxhelias) and sponsored by [Les-Tilleuls.coop](https://les-tilleuls.coop).
+## **Documentation d'utilisation**
+
+### **Pré-requis**
+- PHP 8.2 ou supérieur
+- Composer
+- Symfony CLI (optionnel)
+- MySQL ou toute base de données compatible Doctrine
+
+### **Installation**
+1. Clonez le projet :
+   ```bash
+   git clone <url_du_repo>
+   cd <nom_du_repo>
+   ```
+
+2. Installez les dépendances :
+   ```bash
+   composer install
+   ```
+
+3. Configurez votre base de données dans le fichier `.env` :
+   ```
+   DATABASE_URL="mysql://<user>:<password>@127.0.0.1:3306/<database_name>"
+   ```
+
+4. Appliquez les migrations :
+   ```bash
+   php bin/console doctrine:migrations:migrate
+   ```
+
+5. Démarrez le serveur local :
+   ```bash
+   symfony server:start
+   ```
+
+---
+
+### **Exemple de configuration Postman**
+
+#### **Obtenir un token JWT**
+1. Créez un utilisateur via l'API ou la ligne de commande.
+2. Faites une requête POST à `/api/login_check` avec le corps suivant :
+   ```json
+   {
+       "username": "email@example.com",
+       "password": "motdepasse"
+   }
+   ```
+   **Réponse attendue :**
+   ```json
+   {
+       "token": "votre_token_jwt"
+   }
+   ```
+
+#### **Utiliser le token dans Postman**
+- Ajoutez un en-tête `Authorization` :
+  ```
+  Authorization: Bearer votre_token_jwt
+  ```
+
+---
+
+## **Gestion des rôles et droits**
+
+### **Rôles disponibles**
+- **`ROLE_USER`** : Rôle par défaut pour tous les utilisateurs.
+- **`ROLE_ADMIN`** : Rôle administratif avec des permissions avancées.
+
+### **Permissions par rôle**
+| **Action**             | **ROLE_USER**  | **ROLE_ADMIN**  |
+|-------------------------|----------------|-----------------|
+| Lire un contenu         | ✅             | ✅              |
+| Créer un contenu        | ❌             | ✅              |
+| Modifier un contenu     | ❌             | ✅              |
+| Supprimer un contenu    | ❌             | ✅              |
+| Ajouter un commentaire  | ✅             | ✅              |
+| Supprimer un commentaire| ❌             | ✅              |
+
+---
+
+## **Création d'un utilisateur en ligne de commande**
+
+1. Utilisez la commande suivante :
+   ```bash
+   php bin/console app:create-user
+   ```
+
+2. Fournissez les informations demandées (email, mot de passe, rôle).
+
+---
+
+## **Importation de contenus via CSV**
+
+### **Structure du fichier CSV**
+Le fichier doit contenir les colonnes suivantes :
+| **Colonne**       | **Description**                   |
+|--------------------|-----------------------------------|
+| `title`           | Titre du contenu                 |
+| `meta_title`      | Titre pour le SEO                |
+| `meta_description`| Description pour le SEO          |
+| `content`         | Contenu principal                |
+| `tags`            | Tags séparés par des virgules    |
+| `cover`           | URL de l'image associée          |
+
+### **Envoi via Postman**
+- Endpoint : `/contents/import`
+- Méthode : POST
+- Body : Type `form-data`
+  - Clé : `file`
+  - Valeur : Fichier CSV
+
+---
+
+## **Tests et qualité**
+- **PHPStan** :
+  Analysez le code avec :
+  ```bash
+  vendor/bin/phpstan analyse
+  ```
+- **PHP-CS-Fixer** :
+  Corrigez le style de code avec :
+  ```bash
+  vendor/bin/php-cs-fixer fix
+  ```
+
+---
+
+## **Crédits**
+Développé par **Becue Melvin** (Groupe E).
